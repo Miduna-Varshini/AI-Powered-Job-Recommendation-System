@@ -2,34 +2,38 @@
 
 import streamlit as st
 import pickle
+import os
 import pandas as pd
 
 # ------------------------------
-# Load model and skills list
+# Load model and skills list safely
 # ------------------------------
-@st.cache_data
-def load_model():
-    with open("knn_job_recommender.pkl", "rb") as f:
-        knn_model = pickle.load(f)
-    with open("skills_list.pkl", "rb") as f:
-        skills_list = pickle.load(f)
-    return knn_model, skills_list
+MODEL_PATH = "knn_job_recommender.pkl"
+SKILLS_PATH = "skills_list.pkl"
+DATASET_PATH = "DataScientist.csv"
 
-knn, skills = load_model()
+if not os.path.exists(MODEL_PATH) or not os.path.exists(SKILLS_PATH):
+    st.error("❌ Model files not found. Make sure knn_job_recommender.pkl and skills_list.pkl are in the same folder as app.py")
+    st.stop()
+
+with open(MODEL_PATH, "rb") as f:
+    knn = pickle.load(f)
+
+with open(SKILLS_PATH, "rb") as f:
+    skills = pickle.load(f)
 
 # ------------------------------
 # Load job titles
 # ------------------------------
-@st.cache_data
-def load_job_titles():
-    df = pd.read_csv("DataScientist.csv")  # Your Kaggle dataset CSV
-    # Clean column names
-    df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
-    df = df[['job_title', 'job_description']]
-    df.dropna(inplace=True)
-    return df['job_title']
+if not os.path.exists(DATASET_PATH):
+    st.error(f"❌ Dataset file {DATASET_PATH} not found!")
+    st.stop()
 
-job_titles = load_job_titles()
+df = pd.read_csv(DATASET_PATH)
+df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
+df = df[['job_title', 'job_description']]
+df.dropna(inplace=True)
+job_titles = df['job_title']
 
 # ------------------------------
 # Streamlit UI
@@ -40,15 +44,13 @@ st.write("Select your skills below:")
 # Skill selection
 user_input = []
 for skill in skills:
-    val = st.checkbox(skill.title())  # Show as checkbox
+    val = st.checkbox(skill.title())
     user_input.append(1 if val else 0)
 
-# Button to recommend jobs
 if st.button("Get Job Recommendations"):
     if sum(user_input) == 0:
         st.warning("Please select at least one skill!")
     else:
-        # Predict using KNN
         distances, indices = knn.kneighbors([user_input])
         st.success("✅ Recommended Jobs:")
         for i in indices[0]:
