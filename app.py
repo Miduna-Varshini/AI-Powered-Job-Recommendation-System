@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
-import pickle
 import os
 
 # -------------------------------------------------
-# Page config
+# Page Config
 # -------------------------------------------------
 st.set_page_config(
     page_title="AI Powered Job Recommendation System",
@@ -13,27 +12,25 @@ st.set_page_config(
 )
 
 # -------------------------------------------------
-# CSS (VISIBLE + RESPONSIVE)
+# CSS (Clean & Visible)
 # -------------------------------------------------
 st.markdown("""
 <style>
-body { background-color: #eef2f7; color: #111827; }
+body { background-color: #f1f5f9; }
 
 .main {
     background-color: white;
     padding: 30px;
     border-radius: 14px;
-    box-shadow: 0px 4px 14px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-
-h1, h2, h3 { color: #111827; }
 
 .skill {
     background: #2563eb;
     color: white;
     padding: 6px 14px;
-    border-radius: 20px;
-    margin: 4px;
+    border-radius: 18px;
+    margin: 5px;
     display: inline-block;
     font-size: 14px;
 }
@@ -42,31 +39,22 @@ h1, h2, h3 { color: #111827; }
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 16px;
-    margin-bottom: 15px;
+    margin-bottom: 16px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------
-# Load files
+# Load Data
 # -------------------------------------------------
-DATA_FILE = "career_dataset.csv"
-COMPANY_FILE = "company_jobs.csv"
-SKILLS_FILE = "skills_list.pkl"
+DATA_FILE = "company_jobs.csv"
 
-for f in [DATA_FILE, COMPANY_FILE, SKILLS_FILE]:
-    if not os.path.exists(f):
-        st.error(f"❌ Missing file: {f}")
-        st.stop()
+if not os.path.exists(DATA_FILE):
+    st.error("❌ company_jobs.csv not found")
+    st.stop()
 
 df = pd.read_csv(DATA_FILE)
-companies = pd.read_csv(COMPANY_FILE)
-
-with open(SKILLS_FILE, "rb") as f:
-    all_skills = pickle.load(f)
-
 df.columns = df.columns.str.lower()
-companies.columns = companies.columns.str.lower()
 
 # -------------------------------------------------
 # Helpers
@@ -81,38 +69,42 @@ st.title("🧠 AI Powered Job Recommendation System")
 st.write("Skill-based eligibility & company job matching")
 
 # -------------------------------------------------
-# STEP 1: Domain Selection
+# STEP 1: DOMAIN
 # -------------------------------------------------
 st.subheader("📌 Choose Domain")
 
-domains = sorted(companies["domain"].unique())
+domains = sorted(df["domain"].unique())
 selected_domain = st.selectbox("Select your domain", domains)
 
-domain_jobs = companies[companies["domain"] == selected_domain]
+domain_df = df[df["domain"] == selected_domain]
 
 # -------------------------------------------------
-# STEP 2: Job Role
+# STEP 2: JOB ROLE
 # -------------------------------------------------
 st.subheader("🎯 Choose Job Role")
 
-job_roles = sorted(domain_jobs["job_role"].unique())
+job_roles = sorted(domain_df["job_role"].unique())
 selected_role = st.selectbox("Select job role", job_roles)
 
-job_data = domain_jobs[domain_jobs["job_role"] == selected_role]
+job_df = domain_df[domain_df["job_role"] == selected_role]
 
 # -------------------------------------------------
-# Required Skills
+# REQUIRED SKILLS
 # -------------------------------------------------
-required_skills = job_data.iloc[0]["required_skills"].split(",")
+required_skills = job_df.iloc[0]["required_skills"].split(",")
 
-st.markdown("### 🔑 Required Skills")
+st.subheader("🔑 Required Skills")
 for s in required_skills:
     st.markdown(f"<span class='skill'>{s.strip()}</span>", unsafe_allow_html=True)
 
 # -------------------------------------------------
-# STEP 3: User Skills
+# USER SKILLS
 # -------------------------------------------------
 st.subheader("🛠 Select Your Skills")
+
+all_skills = sorted(
+    set(",".join(df["required_skills"]).split(","))
+)
 
 user_skills = []
 cols = st.columns(3)
@@ -123,11 +115,11 @@ for i, skill in enumerate(all_skills):
             user_skills.append(skill.lower())
 
 # -------------------------------------------------
-# STEP 4: Eligibility + Company Matching
+# ELIGIBILITY + COMPANIES
 # -------------------------------------------------
 if st.button("🔍 Check Eligibility & Jobs"):
     if not user_skills:
-        st.warning("⚠️ Please select at least one skill")
+        st.warning("⚠️ Select at least one skill")
         st.stop()
 
     req_norm = [normalize(s) for s in required_skills]
@@ -138,20 +130,21 @@ if st.button("🔍 Check Eligibility & Jobs"):
 
     st.markdown("---")
     st.subheader("📊 Eligibility Result")
+
     st.write(f"**Skill Match:** {match_percent:.2f}%")
 
     if match_percent >= 60:
-        st.success("✅ You are ELIGIBLE for this job")
+        st.success("✅ You are ELIGIBLE")
     else:
-        st.error("❌ You are NOT eligible for this job")
+        st.error("❌ You are NOT eligible")
 
     # -------------------------------------------------
-    # Companies Hiring
+    # COMPANIES
     # -------------------------------------------------
     st.markdown("---")
     st.subheader("🏢 Companies Hiring")
 
-    for _, row in job_data.iterrows():
+    for _, row in job_df.iterrows():
         comp_req = [normalize(s) for s in row["required_skills"].split(",")]
         comp_match = len([s for s in comp_req if s in user_norm])
         comp_percent = (comp_match / len(comp_req)) * 100
@@ -170,4 +163,4 @@ if st.button("🔍 Check Eligibility & Jobs"):
 # Footer
 # -------------------------------------------------
 st.markdown("---")
-st.caption("Final Year Project • AI Job Recommendation System • Streamlit")
+st.caption("Final Year Project • AI Job Recommendation System")
