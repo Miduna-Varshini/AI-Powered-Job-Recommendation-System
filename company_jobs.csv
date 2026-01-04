@@ -1,5 +1,11 @@
 company,job_role,domain,required_skills,type,apply_link
-Zoho,ML Engineer,AI/ML,python,ml,deep learning,Startup,https://careers.zoho.com
-TCS,Data Analyst,Data Science,python,sql,statistics,MNC,https://tcs.com/careers
-Infosys,Web Developer,Web Development,html,css,javascript,MNC,https://infosys.com/careers
-StartupX,AI Engineer,AI/ML,python,ml,nlp,Startup,https://startupx.com/jobs
+Zoho,Frontend Developer,Web Development,html,css,javascript,Startup,https://careers.zoho.com
+Wipro,Frontend Developer,Web Development,html,css,javascript,MNC,https://careers.wipro.com
+Infosys,Frontend Developer,Web Development,html,css,javascript,MNC,https://www.infosys.com/careers
+Amazon,Frontend Developer,Web Development,html,css,javascript,MNC,https://www.amazon.jobs
+
+TCS,Data Analyst,Data Science,python,sql,statistics,MNC,https://www.tcs.com/careers
+Infosys,Data Analyst,Data Science,python,sql,statistics,MNC,https://www.infosys.com/careers
+
+Zoho,ML Engineer,AI / ML,python,ml,deep learning,Startup,https://careers.zoho.com
+Amazon,ML Engineer,AI / ML,python,ml,deep learning,MNC,https://www.amazon.jobs
