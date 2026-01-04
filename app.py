@@ -43,6 +43,10 @@ p, label, div {
     margin: 5px;
     font-size: 14px;
 }
+a.company-link {
+    text-decoration: none;
+    color: #2563eb;
+}
 button[kind="primary"] {
     background-color: #2563eb;
     color: white;
@@ -60,7 +64,7 @@ SKILLS_FILE = "skills_list.pkl"
 DATA_FILE = "career_dataset.csv"
 
 # -------------------------------------------------
-# File checks
+# Check files
 # -------------------------------------------------
 for file in [MODEL_FILE, SKILLS_FILE, DATA_FILE]:
     if not os.path.exists(file):
@@ -78,27 +82,34 @@ with open(SKILLS_FILE, "rb") as f:
 
 df = pd.read_csv(DATA_FILE)
 df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+
+# Ensure optional columns exist
+for col in ["skills", "domain", "company_name", "company_type"]:
+    if col not in df.columns:
+        df[col] = ""
+
 df["skills"] = df["skills"].astype(str).str.lower()
-df["domain"] = df["domain"].astype(str).str.title()  # for domain selection
+df["domain"] = df["domain"].astype(str).str.title()
 df["company_name"] = df["company_name"].astype(str).str.title()
 df["company_type"] = df["company_type"].astype(str).str.title()
 
 # -------------------------------------------------
-# Title
+# Utility function
 # -------------------------------------------------
-st.title("🧠 AI Job Eligibility & Recommendation System")
-st.write("Check your eligibility and see which companies are hiring!")
+def normalize(skill):
+    return skill.strip().lower().replace(" ", "")
 
 # -------------------------------------------------
-# Step 0: Signup / Login (simple)
+# Step 0: Signup/Login
 # -------------------------------------------------
+st.title("🧠 AI Job Eligibility & Recommendation")
 st.subheader("🔐 Sign Up / Login")
 username = st.text_input("Enter your name:")
 if username:
     st.success(f"Welcome, {username}!")
 
 # -------------------------------------------------
-# Step 1: Domain Selection
+# Step 1: Domain selection
 # -------------------------------------------------
 st.subheader("🌐 Select Domain")
 domain_list = sorted(df["domain"].unique())
@@ -112,9 +123,8 @@ selected_career = st.selectbox("Select Job Role", domain_careers)
 # Step 3: Show Required Skills
 # -------------------------------------------------
 career_row = df[df["recommended_career"] == selected_career]
-
 if career_row.empty:
-    st.error("❌ No data found for this career. Check your CSV or selection.")
+    st.error("❌ No data found for this career.")
     st.stop()
 else:
     career_skills_text = career_row["skills"].iloc[0]
@@ -130,7 +140,6 @@ else:
 st.subheader("🛠 Select Your Skills")
 user_vector = []
 cols = st.columns(3)
-
 for i, skill in enumerate(all_skills):
     with cols[i % 3]:
         checked = st.checkbox(skill.title())
@@ -144,8 +153,9 @@ if st.button("🔍 Check Eligibility"):
         st.warning("⚠️ Please select at least one skill")
     else:
         user_skills = [all_skills[i] for i, v in enumerate(user_vector) if v == 1]
-        required_skills_norm = [s.lower().replace(" ", "") for s in career_required_skills]
-        user_skills_norm = [s.lower().replace(" ", "") for s in user_skills]
+
+        required_skills_norm = [normalize(s) for s in career_required_skills]
+        user_skills_norm = [normalize(s) for s in user_skills]
 
         matched_skills = [s for s in required_skills_norm if s in user_skills_norm]
         missing_skills = [s for s in required_skills_norm if s not in user_skills_norm]
@@ -173,7 +183,8 @@ if st.button("🔍 Check Eligibility"):
             st.subheader("🏢 Companies Currently Hiring for this Role")
             hiring_companies = df[df["recommended_career"] == selected_career][["company_name", "company_type"]].drop_duplicates()
             for i, row in hiring_companies.iterrows():
-                st.markdown(f"- **{row['company_name']}** ({row['company_type']})")
+                company_link = f"https://www.google.com/search?q={row['company_name']}+careers"
+                st.markdown(f"- <a class='company-link' href='{company_link}' target='_blank'>{row['company_name']}</a> ({row['company_type']})", unsafe_allow_html=True)
 
 # -------------------------------------------------
 # Footer
