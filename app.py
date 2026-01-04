@@ -182,29 +182,29 @@ if st.button("🔍 Check Eligibility"):
         # -------------------------------------------------
 # Step 6: Show Companies Hiring with real links
 # -------------------------------------------------
-if match_percent >= 60:
-    st.subheader("🏢 Companies Currently Hiring for this Role")
+        if match_percent >= 60:
+            st.subheader("🏢 Companies Currently Hiring for this Role")
 
     # Map company names to official careers/job pages
-    company_links = {
-        "Wipro": "https://careers.wipro.com/",
-        "Infosys": "https://www.infosys.com/careers/",
-        "Amazon": "https://www.amazon.jobs/en/",
-        "Zoho": "https://www.zoho.com/careers.html",
-        "TCS": "https://www.tcs.com/careers",
-        "Microsoft": "https://careers.microsoft.com/",
-        "Google": "https://careers.google.com/",
-        "IBM": "https://www.ibm.com/careers",
+            company_links = {
+                "Wipro": "https://careers.wipro.com/",
+                "Infosys": "https://www.infosys.com/careers/",
+                "Amazon": "https://www.amazon.jobs/en/",
+                "Zoho": "https://www.zoho.com/careers.html",
+                "TCS": "https://www.tcs.com/careers",
+                "Microsoft": "https://careers.microsoft.com/",
+                "Google": "https://careers.google.com/",
+                "IBM": "https://www.ibm.com/careers",
         # Add more companies if needed
-    }
+            }
+    
+            hiring_companies = df[df["recommended_career"] == selected_career][["company_name", "company_type"]].drop_duplicates()
 
-    hiring_companies = df[df["recommended_career"] == selected_career][["company_name", "company_type"]].drop_duplicates()
-
-    for i, row in hiring_companies.iterrows():
-        name = row["company_name"]
-        ctype = row["company_type"]
-        url = company_links.get(name, f"https://www.google.com/search?q={name}+careers")
-        st.markdown(f"- <a class='company-link' href='{url}' target='_blank'>{name}</a> ({ctype})", unsafe_allow_html=True)
+            for i, row in hiring_companies.iterrows():
+                name = row["company_name"]
+                ctype = row["company_type"]
+                url = company_links.get(name, f"https://www.google.com/search?q={name}+careers")
+                st.markdown(f"- <a class='company-link' href='{url}' target='_blank'>{name}</a> ({ctype})", unsafe_allow_html=True)
 
 # -------------------------------------------------
 # Footer
