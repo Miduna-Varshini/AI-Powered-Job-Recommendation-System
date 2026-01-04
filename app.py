@@ -2,48 +2,74 @@ import streamlit as st
 import pandas as pd
 import pickle
 import os
-import webbrowser
 
-# -----------------------------
+# -------------------------------------------------
 # Page config
-# -----------------------------
+# -------------------------------------------------
 st.set_page_config(
-    page_title="AI Powered Job Recommendation",
+    page_title="AI Job Eligibility & Recommendation",
     page_icon="🧠",
     layout="centered"
 )
 
-# -----------------------------
-# CSS for better visibility
-# -----------------------------
+# -------------------------------------------------
+# Custom CSS (responsive & visible)
+# -------------------------------------------------
 st.markdown("""
 <style>
-body {background-color: #eef2f7; color: #1f2933;}
-h1,h2,h3,h4 {color: #111827;}
-.skill-box {background-color: #2563eb; color:white; padding:6px 12px; border-radius:20px; display:inline-block; margin:5px; font-size:14px;}
-.company-box {background-color:#16a34a; color:white; padding:6px 12px; border-radius:12px; display:inline-block; margin:3px; font-size:14px;}
-button[kind="primary"] {background-color: #2563eb; color:white; border-radius:8px; padding:10px 18px;}
+body {
+    background-color: #eef2f7;
+    color: #1f2933;
+}
+.main {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
+}
+h1, h2, h3, h4 {
+    color: #111827;
+}
+p, label, div {
+    color: #1f2933 !important;
+    font-size: 16px;
+}
+.skill-box {
+    background-color: #2563eb;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    margin: 5px;
+    font-size: 14px;
+}
+button[kind="primary"] {
+    background-color: #2563eb;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 18px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------
+# -------------------------------------------------
 # File paths
-# -----------------------------
+# -------------------------------------------------
 MODEL_FILE = "knn_job_recommender.pkl"
 SKILLS_FILE = "skills_list.pkl"
 DATA_FILE = "career_dataset.csv"
 
-# -----------------------------
-# Check files
-# -----------------------------
+# -------------------------------------------------
+# File checks
+# -------------------------------------------------
 for file in [MODEL_FILE, SKILLS_FILE, DATA_FILE]:
     if not os.path.exists(file):
         st.error(f"❌ Missing file: {file}")
         st.stop()
 
-# -----------------------------
+# -------------------------------------------------
 # Load model & data
-# -----------------------------
+# -------------------------------------------------
 with open(MODEL_FILE, "rb") as f:
     knn = pickle.load(f)
 
@@ -53,66 +79,54 @@ with open(SKILLS_FILE, "rb") as f:
 df = pd.read_csv(DATA_FILE)
 df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
 df["skills"] = df["skills"].astype(str).str.lower()
+df["domain"] = df["domain"].astype(str).str.title()  # for domain selection
+df["company_name"] = df["company_name"].astype(str).str.title()
+df["company_type"] = df["company_type"].astype(str).str.title()
 
-# -----------------------------
-# Normalize function
-# -----------------------------
-def normalize(skill):
-    return skill.strip().lower().replace(" ", "")
+# -------------------------------------------------
+# Title
+# -------------------------------------------------
+st.title("🧠 AI Job Eligibility & Recommendation System")
+st.write("Check your eligibility and see which companies are hiring!")
 
-# -----------------------------
-# Domain → Job Role mapping
-# -----------------------------
-DOMAINS = {
-    "Data Science": ["Data Scientist", "ML Engineer", "AI Researcher", "Business Analyst"],
-    "Web Development": ["Web Developer", "Frontend Developer", "Backend Developer"],
-    "Business": ["Business Analyst", "Project Manager"]
-}
+# -------------------------------------------------
+# Step 0: Signup / Login (simple)
+# -------------------------------------------------
+st.subheader("🔐 Sign Up / Login")
+username = st.text_input("Enter your name:")
+if username:
+    st.success(f"Welcome, {username}!")
 
-# -----------------------------
-# Job Role → Companies mapping with links
-# -----------------------------
-COMPANIES = {
-    "Data Scientist": {"Wipro":"https://careers.wipro.com","Infosys":"https://www.infosys.com/careers","TCS":"https://www.tcs.com/careers","Amazon":"https://www.amazon.jobs/en/","Google":"https://careers.google.com/"},
-    "ML Engineer": {"Google":"https://careers.google.com/","Microsoft":"https://careers.microsoft.com/","IBM":"https://www.ibm.com/employment/","Amazon":"https://www.amazon.jobs/en/","Wipro":"https://careers.wipro.com"},
-    "AI Researcher": {"OpenAI":"https://openai.com/careers","Google DeepMind":"https://deepmind.com/careers","Microsoft":"https://careers.microsoft.com/","IBM":"https://www.ibm.com/employment/"},
-    "Web Developer": {"Zoho":"https://www.zoho.com/careers.html","Freshworks":"https://www.freshworks.com/company/careers/","Microsoft":"https://careers.microsoft.com/","Amazon":"https://www.amazon.jobs/en/"},
-    "Business Analyst": {"Infosys":"https://www.infosys.com/careers","Accenture":"https://www.accenture.com/us-en/careers","Deloitte":"https://www2.deloitte.com/global/en/careers","Zoho":"https://www.zoho.com/careers.html"},
-    "Project Manager": {"TCS":"https://www.tcs.com/careers","IBM":"https://www.ibm.com/employment/","Microsoft":"https://careers.microsoft.com/","Infosys":"https://www.infosys.com/careers"}
-}
+# -------------------------------------------------
+# Step 1: Domain Selection
+# -------------------------------------------------
+st.subheader("🌐 Select Domain")
+domain_list = sorted(df["domain"].unique())
+selected_domain = st.selectbox("Choose Domain", domain_list)
 
-# -----------------------------
-# App Title
-# -----------------------------
-st.title("🧠 AI Powered Job Recommendation System")
-st.write("Check your eligibility & see companies hiring!")
+# Step 2: Career selection in domain
+domain_careers = sorted(df[df["domain"] == selected_domain]["recommended_career"].unique())
+selected_career = st.selectbox("Select Job Role", domain_careers)
 
-# -----------------------------
-# Step 1: Choose Domain
-# -----------------------------
-st.subheader("📌 Choose Domain")
-selected_domain = st.selectbox("Select your domain", list(DOMAINS.keys()))
-
-# -----------------------------
-# Step 2: Choose Job Role
-# -----------------------------
-st.subheader("🎯 Choose Job Role")
-job_roles = DOMAINS[selected_domain]
-selected_career = st.selectbox("Select job role", job_roles)
-
-# -----------------------------
+# -------------------------------------------------
 # Step 3: Show Required Skills
-# -----------------------------
-career_skills_text = df[df["recommended_career"] == selected_career]["skills"].iloc[0]
-career_required_skills = [s.strip() for s in career_skills_text.split(",")]
+# -------------------------------------------------
+career_row = df[df["recommended_career"] == selected_career]
 
-st.markdown("### 🔑 Required Skills")
-for s in career_required_skills:
-    st.markdown(f"<span class='skill-box'>{s}</span>", unsafe_allow_html=True)
+if career_row.empty:
+    st.error("❌ No data found for this career. Check your CSV or selection.")
+    st.stop()
+else:
+    career_skills_text = career_row["skills"].iloc[0]
+    career_required_skills = [s.strip() for s in career_skills_text.split(",")]
 
-# -----------------------------
-# Step 4: User Skill Input
-# -----------------------------
+    st.markdown("### 🔑 Required Skills for this Job")
+    for s in career_required_skills:
+        st.markdown(f"<span class='skill-box'>{s}</span>", unsafe_allow_html=True)
+
+# -------------------------------------------------
+# Step 4: User Skills Selection
+# -------------------------------------------------
 st.subheader("🛠 Select Your Skills")
 user_vector = []
 cols = st.columns(3)
@@ -122,49 +136,47 @@ for i, skill in enumerate(all_skills):
         checked = st.checkbox(skill.title())
         user_vector.append(1 if checked else 0)
 
-# -----------------------------
+# -------------------------------------------------
 # Step 5: Eligibility Check
-# -----------------------------
-if st.button("✅ Check Eligibility"):
+# -------------------------------------------------
+if st.button("🔍 Check Eligibility"):
     if sum(user_vector) == 0:
-        st.warning("⚠️ Please select at least one skill!")
+        st.warning("⚠️ Please select at least one skill")
     else:
         user_skills = [all_skills[i] for i, v in enumerate(user_vector) if v == 1]
-        required_skills = [s.lower() for s in career_required_skills]
+        required_skills_norm = [s.lower().replace(" ", "") for s in career_required_skills]
+        user_skills_norm = [s.lower().replace(" ", "") for s in user_skills]
 
-        user_skills_norm = [normalize(s) for s in user_skills]
-        required_skills_norm = [normalize(s) for s in required_skills]
-
-        matched_skills = [required_skills[i] for i,s in enumerate(required_skills_norm) if s in user_skills_norm]
-        missing_skills = [required_skills[i] for i,s in enumerate(required_skills_norm) if s not in user_skills_norm]
-
-        match_percent = (len(matched_skills) / len(required_skills)) * 100
+        matched_skills = [s for s in required_skills_norm if s in user_skills_norm]
+        missing_skills = [s for s in required_skills_norm if s not in user_skills_norm]
+        match_percent = (len(matched_skills) / len(required_skills_norm)) * 100
 
         st.markdown("---")
         st.subheader("📊 Eligibility Result")
         st.write(f"**Skill Match Percentage:** {match_percent:.2f}%")
-        st.info(f"Matched {len(matched_skills)} out of {len(required_skills)} skills")
+        st.info(f"Matched {len(matched_skills)} out of {len(required_skills_norm)} required skills")
 
         if match_percent >= 60:
             st.success("✅ You are ELIGIBLE for this career!")
-            st.subheader("🏢 Companies Hiring")
-            hiring_companies = COMPANIES.get(selected_career, {})
-            if hiring_companies:
-                for company, link in hiring_companies.items():
-                    st.markdown(f"<a href='{link}' target='_blank'><span class='company-box'>{company}</span></a>", unsafe_allow_html=True)
-            else:
-                st.info("No company data available for this role yet.")
         else:
             st.error("❌ You are NOT eligible for this career")
 
-        # Missing skills
         if missing_skills:
             st.markdown("### ❗ Skills to Improve")
             for skill in missing_skills:
                 st.write("-", skill.title())
 
-# -----------------------------
+        # -------------------------------------------------
+        # Step 6: Show Companies Hiring
+        # -------------------------------------------------
+        if match_percent >= 60:
+            st.subheader("🏢 Companies Currently Hiring for this Role")
+            hiring_companies = df[df["recommended_career"] == selected_career][["company_name", "company_type"]].drop_duplicates()
+            for i, row in hiring_companies.iterrows():
+                st.markdown(f"- **{row['company_name']}** ({row['company_type']})")
+
+# -------------------------------------------------
 # Footer
-# -----------------------------
+# -------------------------------------------------
 st.markdown("---")
 st.caption("Final Year Project • Machine Learning • Streamlit")
