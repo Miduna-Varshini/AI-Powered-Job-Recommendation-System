@@ -1,4 +1,5 @@
 import streamlit as st
+import urllib.parse
 
 # -------------------------------------------------
 # PAGE CONFIG
@@ -10,12 +11,12 @@ st.set_page_config(
 )
 
 st.title("💼 AI Powered Job Recommendation System")
-st.caption("Final Year Project • Machine Learning • Streamlit")
+st.caption("Final Year Project • Machine Learning Concept • Streamlit")
 
 st.divider()
 
 # -------------------------------------------------
-# DOMAIN → CAREER → SKILLS (STATIC = NO ERRORS)
+# DOMAIN → ROLE → SKILLS
 # -------------------------------------------------
 domain_data = {
     "Data Science": {
@@ -33,49 +34,12 @@ domain_data = {
 }
 
 # -------------------------------------------------
-# COMPANIES WITH REAL CAREER LINKS
-# -------------------------------------------------
-company_map = {
-    "Data Scientist": [
-        ("Google", "https://careers.google.com/"),
-        ("Amazon", "https://www.amazon.jobs/"),
-        ("Microsoft", "https://careers.microsoft.com/"),
-        ("IBM", "https://www.ibm.com/careers")
-    ],
-    "Data Analyst": [
-        ("Accenture", "https://www.accenture.com/in-en/careers"),
-        ("Deloitte", "https://www2.deloitte.com/global/en/careers.html"),
-        ("EY", "https://www.ey.com/en_in/careers")
-    ],
-    "Web Developer": [
-        ("Zoho", "https://www.zoho.com/careers.html"),
-        ("Freshworks", "https://www.freshworks.com/company/careers/"),
-        ("Infosys", "https://www.infosys.com/careers/")
-    ],
-    "Backend Developer": [
-        ("TCS", "https://www.tcs.com/careers"),
-        ("Wipro", "https://careers.wipro.com/"),
-        ("Cognizant", "https://careers.cognizant.com/")
-    ],
-    "Software Developer": [
-        ("Google", "https://careers.google.com/"),
-        ("Microsoft", "https://careers.microsoft.com/"),
-        ("Amazon", "https://www.amazon.jobs/")
-    ],
-    "Full Stack Developer": [
-        ("Accenture", "https://www.accenture.com/in-en/careers"),
-        ("Zoho", "https://www.zoho.com/careers.html"),
-        ("Capgemini", "https://www.capgemini.com/careers/")
-    ]
-}
-
-# -------------------------------------------------
 # USER INPUT
 # -------------------------------------------------
 domain = st.selectbox("📌 Select Domain", list(domain_data.keys()))
 
 career = st.selectbox(
-    "🎯 Select Career",
+    "🎯 Select Job Role",
     list(domain_data[domain].keys())
 )
 
@@ -83,7 +47,12 @@ required_skills = domain_data[domain][career]
 
 user_skills = st.multiselect(
     "🛠 Select Your Skills",
-    sorted({skill for skills in domain_data[domain].values() for skill in skills})
+    sorted({skill for roles in domain_data[domain].values() for skill in roles})
+)
+
+location = st.selectbox(
+    "📍 Preferred Job Location",
+    ["Madurai", "Chennai", "Bangalore", "Hyderabad", "Remote"]
 )
 
 st.divider()
@@ -95,35 +64,43 @@ if st.button("🔍 Check Eligibility"):
     if not user_skills:
         st.warning("⚠️ Please select at least one skill.")
     else:
-        matched_skills = list(set(user_skills) & set(required_skills))
-        match_percent = (len(matched_skills) / len(required_skills)) * 100
+        matched = list(set(user_skills) & set(required_skills))
+        match_percent = (len(matched) / len(required_skills)) * 100
 
         st.subheader("📊 Eligibility Result")
-
         st.write(f"**Skill Match Percentage:** {match_percent:.2f}%")
-        st.info(f"Matched {len(matched_skills)} out of {len(required_skills)} required skills")
 
         if match_percent >= 60:
-            st.success("✅ You are ELIGIBLE for this career!")
+            st.success("✅ You are ELIGIBLE for this job role!")
 
             st.subheader("🔑 Required Skills")
             st.write(", ".join(required_skills))
 
-            st.subheader("🏢 Companies Currently Hiring for this Role")
+            # -------------------------------------------------
+            # NAUKRI JOB SEARCH LINKS
+            # -------------------------------------------------
+            st.subheader("🔎 Apply Jobs on Naukri")
 
-            companies = company_map.get(career, [])
+            encoded_role = urllib.parse.quote(career.lower())
+            encoded_location = urllib.parse.quote(location.lower())
 
-            if companies:
-                for company, link in companies:
-                    st.markdown(f"- 🔗 [{company}]({link})")
-            else:
-                st.info("No company data available for this role.")
+            naukri_link = f"https://www.naukri.com/{encoded_role}-jobs-in-{encoded_location}"
+
+            st.markdown(
+                f"""
+                🔗 **[Click here to view live {career} jobs in {location} on Naukri]({naukri_link})**
+                """
+            )
+
+            st.info(
+                "You will be redirected to Naukri.com where you can apply for real job openings."
+            )
 
         else:
-            st.error("❌ You are NOT eligible for this career.")
-            st.subheader("📌 Improve These Skills")
+            st.error("❌ You are NOT eligible for this job role.")
             missing = list(set(required_skills) - set(user_skills))
+            st.subheader("📌 Skills to Improve")
             st.write(", ".join(missing))
 
 st.divider()
-st.caption("© 2026 Final Year Project | AI Job Recommendation System")
+st.caption("© 2026 | AI Job Recommendation System")
