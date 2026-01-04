@@ -123,32 +123,45 @@ if st.button("🔍 Check Eligibility"):
     if sum(user_vector) == 0:
         st.warning("⚠️ Please select at least one skill")
     else:
-        user_skill_names = [
-            all_skills[i] for i, v in enumerate(user_vector) if v == 1
+        # User selected skills
+        user_skills = [
+            all_skills[i]
+            for i, v in enumerate(user_vector) if v == 1
+        ]
+
+        # Required skills for selected career
+        required_skills = [
+            s.strip().lower() for s in career_required_skills
+        ]
+
+        # Skill matching
+        matched_skills = [
+            s for s in required_skills if s in user_skills
         ]
 
         missing_skills = [
-            s for s in career_required_skills
-            if s.lower() not in user_skill_names
+            s for s in required_skills if s not in user_skills
         ]
 
+        # Percentage calculation
+        match_percent = (len(matched_skills) / len(required_skills)) * 100
+
         st.markdown("---")
+        st.subheader("📊 Eligibility Result")
 
-        if len(missing_skills) <= 1:
-            st.markdown(
-                "<div class='success-box'><h3>✅ You are ELIGIBLE!</h3>"
-                "<p>You match the required skill set.</p></div>",
-                unsafe_allow_html=True
-            )
+        st.write(f"**Skill Match Percentage:** {match_percent:.2f}%")
+
+        if match_percent >= 70:
+            st.success("✅ You are ELIGIBLE for this career!")
         else:
-            st.markdown(
-                "<div class='error-box'><h3>❌ Not Eligible</h3>"
-                "<p>You are missing the following skills:</p></div>",
-                unsafe_allow_html=True
-            )
+            st.error("❌ You are NOT eligible for this career")
 
-            for m in missing_skills:
-                st.markdown(f"- {m}")
+        # Show missing skills
+        if missing_skills:
+            st.markdown("### ❗ Skills to Improve:")
+            for skill in missing_skills:
+                st.write("-", skill.title())
+
 
 # ---------------------------------
 # Footer
